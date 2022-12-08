@@ -1,0 +1,53 @@
+version: '3'
+services:
+  #PHP Service
+  php_base_app:
+    build:
+      context: .
+      dockerfile: app.dockerfile
+    container_name: php_base_app
+    volumes:
+      - ../:/var/www
+    networks:
+      - php_base_network
+    links:
+      - php_base-mysql:db
+
+  #Nginx Service
+  php_base_web:
+    image: nginx:1.21.1
+    container_name: php_base_web
+    ports:
+      - 8080:80
+    volumes:
+      - ../:/var/www
+      - ./vhost.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - php_base_network
+    depends_on:
+      - php_base_app
+
+  # MySQL Service
+  php_base-mysql:
+    image: mysql:8.0
+    container_name: php_base-mysql
+    command: --default-authentication-plugin=mysql_native_password
+    ports:
+      - 33061:3306
+    environment:
+      MYSQL_DATABASE: db_base
+      MYSQL_ROOT_PASSWORD: root
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql
+    networks:
+      - php_base_network
+    volumes:
+      - php_base-mysql:/var/lib/mysql
+      - ./my.cnf:/etc/mysql/conf.d/my.cnf
+
+#Docker Networks
+networks:
+  php_base_network:
+    driver: bridge
+volumes:
+  php_base-mysql: {}
